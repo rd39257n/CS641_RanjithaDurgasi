@@ -1,4 +1,4 @@
-# Welcome to Your React Native App 🎉
+# Welcome to My React Native App 🎉
 
 This app is built using **React Native** with **React Navigation** on **Expo**, allowing navigation between screens to explore course content.
 
@@ -10,7 +10,7 @@ This app is built using **React Native** with **React Navigation** on **Expo**, 
 
 | Screenshot 1 | Screenshot 2 | Screenshot 3 |
 | ------------ | ------------ | ------------ |
-| ![Screenshot 1](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot1.png) | ![Screenshot 2](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot2.png) | ![Screenshot 3](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot3.png) |
+| ![Screenshot 1](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot1.PNG) | ![Screenshot 2](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot2.PNG) | ![Screenshot 3](https://github.com/rd39257n/CS641_RanjithaDurgasi/blob/main/assignment3/images/screenshot3.PNG) |
 
 ## How to Run
 
