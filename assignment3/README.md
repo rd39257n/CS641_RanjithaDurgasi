@@ -13,4 +13,4 @@ This app is built using **React Native** with **React Navigation** on **Expo**, 
 ## How to Run
 
 1. Install dependencies: `npm install`
-2. Start the app: `npx expo start`
+2. Start the app: `npm run ios`
