@@ -4,9 +4,9 @@ A simple and modern camera app built with React Native and Expo.
 
 ## 📱 Features
 
-- Camera with front/back switching
-- Photo capture
-- Photo preview & sharing
+- Camera with front
+- Photo capture preview
+- Photo sharing
 
 ## 📸 Preview
 <div align="center">
