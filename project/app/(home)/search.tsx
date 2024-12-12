@@ -7,87 +7,183 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-// Dummy data for the grid
-const DUMMY_RESULTS = [
+// Updated categories to match the skills data
+const SKILL_CATEGORIES = {
+  Programming: {
+    icon: "code-tags",
+    color: "#6C63FF",
+    description: "Software development and coding skills",
+  },
+  Design: {
+    icon: "palette",
+    color: "#FF6B6B",
+    description: "Visual and user experience design",
+  },
+  "Data Science": {
+    icon: "chart-box",
+    color: "#4CAF50",
+    description: "Data analysis and machine learning",
+  },
+  Technology: {
+    icon: "laptop",
+    color: "#FFA726",
+    description: "General technology and IT skills",
+  },
+  Marketing: {
+    icon: "bullhorn",
+    color: "#9C27B0",
+    description: "Digital marketing and promotion",
+  },
+};
+
+const SKILLS_DATA = [
   {
     id: "1",
-    name: "Sarah Johnson",
-    skills: ["UI Design"],
-    image: "🎨",
+    name: "React Native",
+    category: "Programming",
+    description:
+      "Mobile app development with React Native, enabling the creation of cross-platform applications using JavaScript and React.",
+    popularity: 92,
+    difficulty: "Intermediate",
+    learningTime: "3-6 months",
+    prerequisites: ["JavaScript", "React"],
+    careerPaths: ["Mobile App Developer", "Full Stack Developer"],
+    resources: [
+      "Official React Native Documentation",
+      "Udemy Courses",
+      "YouTube Tutorials",
+    ],
   },
   {
     id: "2",
-    name: "Mike Chen",
-    skills: ["Python"],
-    image: "💻",
+    name: "UI Design",
+    category: "Design",
+    description:
+      "Learn to create beautiful, functional, and user-centric interfaces for websites and applications.",
+    popularity: 88,
+    difficulty: "Beginner",
+    learningTime: "2-4 months",
+    prerequisites: ["Basic Design Theory"],
+    careerPaths: ["UI Designer", "UX Designer"],
+    resources: ["Figma Tutorials", "Design Books", "Online Courses"],
   },
   {
     id: "3",
-    name: "Emma Davis",
-    skills: ["Photography"],
-    image: "📸",
+    name: "Python",
+    category: "Programming",
+    description:
+      "General-purpose programming language used for web development, data science, AI, and more.",
+    popularity: 95,
+    difficulty: "Beginner",
+    learningTime: "2-3 months",
+    prerequisites: [],
+    careerPaths: [
+      "Data Scientist",
+      "Software Developer",
+      "Machine Learning Engineer",
+    ],
+    resources: ["Python.org", "Codecademy", "Automate the Boring Stuff"],
   },
   {
     id: "4",
-    name: "Alex Kim",
-    skills: ["Music"],
-    image: "🎵",
+    name: "Machine Learning",
+    category: "Data Science",
+    description:
+      "Learn to build predictive models and work with AI systems using algorithms and data.",
+    popularity: 90,
+    difficulty: "Advanced",
+    learningTime: "6-12 months",
+    prerequisites: ["Python", "Linear Algebra", "Statistics"],
+    careerPaths: ["Machine Learning Engineer", "Data Scientist"],
+    resources: [
+      "Coursera AI Courses",
+      "Google AI Learning Resources",
+      "Books on ML",
+    ],
   },
   {
     id: "5",
-    name: "Lisa Wang",
-    skills: ["Marketing"],
-    image: "📱",
-  },
-  {
-    id: "6",
-    name: "John Smith",
-    skills: ["Writing"],
-    image: "✍️",
+    name: "Digital Marketing",
+    category: "Marketing",
+    description:
+      "Master online marketing strategies, including SEO, social media marketing, and content marketing.",
+    popularity: 85,
+    difficulty: "Beginner",
+    learningTime: "2-3 months",
+    prerequisites: ["Basic Computer Knowledge"],
+    careerPaths: ["Digital Marketer", "Content Strategist"],
+    resources: [
+      "Google Digital Garage",
+      "HubSpot Academy",
+      "Udemy Marketing Courses",
+    ],
   },
 ];
 
-const CATEGORIES = [
-  "All",
-  "Design",
-  "Programming",
-  "Marketing",
-  "Music",
-  "Photography",
-  "Writing",
-];
-
-export default function Search() {
+export default function SkillDiscovery() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const renderGridItem = (item) => (
-    <TouchableOpacity key={item.id} style={styles.gridItem}>
-      <View style={styles.imageContainer}>
-        <Text style={styles.emoji}>{item.image}</Text>
-      </View>
-      <View style={styles.gridItemContent}>
-        <Text style={styles.gridItemName}>{item.name}</Text>
-        <View style={styles.skillsContainer}>
-          {item.skills.map((skill, index) => (
-            <View key={index} style={styles.skillChip}>
-              <Text style={styles.skillText}>{skill}</Text>
-            </View>
-          ))}
+  const renderSkillCard = (skill) => {
+    const categoryConfig = SKILL_CATEGORIES[skill.category] || {
+      icon: "school",
+      color: "#666666",
+      description: "General skill",
+    };
+
+    return (
+      <TouchableOpacity key={skill.id} style={styles.skillCard}>
+        <View
+          style={[
+            styles.categoryIndicator,
+            { backgroundColor: `${categoryConfig.color}15` },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={categoryConfig.icon}
+            size={24}
+            color={categoryConfig.color}
+          />
         </View>
-      </View>
-    </TouchableOpacity>
+        <View style={styles.skillContent}>
+          <Text style={styles.skillName}>{skill.name}</Text>
+          <Text style={styles.skillDescription} numberOfLines={2}>
+            {skill.description}
+          </Text>
+          <View style={styles.skillMetrics}>
+            <View style={styles.metricItem}>
+              <MaterialCommunityIcons name="signal" size={16} color="#666" />
+              <Text style={styles.metricText}>{skill.difficulty}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <MaterialCommunityIcons
+                name="clock-outline"
+                size={16}
+                color="#666"
+              />
+              <Text style={styles.metricText}>{skill.learningTime}</Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const filteredSkills = SKILLS_DATA.filter(
+    (skill) =>
+      (!selectedCategory || skill.category === selectedCategory) &&
+      (!searchQuery ||
+        skill.name.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
+        <Text style={styles.headerTitle}>Discover Skills</Text>
       </View>
 
       <View style={styles.searchSection}>
@@ -100,7 +196,7 @@ export default function Search() {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search skills or members"
+            placeholder="Search skills to learn"
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -121,15 +217,28 @@ export default function Search() {
           style={styles.categoriesContainer}
           contentContainerStyle={styles.categoriesContent}
         >
-          {CATEGORIES.map((category) => (
+          {Object.entries(SKILL_CATEGORIES).map(([category, config]) => (
             <TouchableOpacity
               key={category}
               style={[
                 styles.categoryChip,
                 selectedCategory === category && styles.selectedCategoryChip,
+                {
+                  backgroundColor:
+                    selectedCategory === category ? config.color : "#F0F0F0",
+                },
               ]}
-              onPress={() => setSelectedCategory(category)}
+              onPress={() =>
+                setSelectedCategory(
+                  selectedCategory === category ? null : category,
+                )
+              }
             >
+              <MaterialCommunityIcons
+                name={config.icon}
+                size={20}
+                color={selectedCategory === category ? "#FFFFFF" : config.color}
+              />
               <Text
                 style={[
                   styles.categoryText,
@@ -145,19 +254,11 @@ export default function Search() {
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.gridContainer}
+        contentContainerStyle={styles.skillsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {DUMMY_RESULTS.map((item) => renderGridItem(item))}
+        {filteredSkills.map(renderSkillCard)}
       </ScrollView>
-
-      <TouchableOpacity style={styles.filterButton}>
-        <MaterialCommunityIcons
-          name="filter-variant"
-          size={24}
-          color="#FFFFFF"
-        />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -208,13 +309,17 @@ const styles = StyleSheet.create({
   categoriesContent: {
     paddingHorizontal: 20,
     paddingBottom: 16,
+    gap: 8,
   },
   categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "#F0F0F0",
     marginRight: 8,
+    gap: 6,
   },
   selectedCategoryChip: {
     backgroundColor: "#6C63FF",
@@ -231,17 +336,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  gridContainer: {
-    padding: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  skillsContainer: {
+    padding: 16,
   },
-  gridItem: {
-    width: (Dimensions.get("window").width - 36) / 2,
+  skillCard: {
+    flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -251,59 +354,39 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  imageContainer: {
-    height: 160,
-    backgroundColor: "rgba(108, 99, 255, 0.1)",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  categoryIndicator: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 16,
   },
-  emoji: {
-    fontSize: 48,
+  skillContent: {
+    flex: 1,
   },
-  gridItemContent: {
-    padding: 12,
-  },
-  gridItemName: {
-    fontSize: 16,
+  skillName: {
+    fontSize: 18,
     fontWeight: "600",
     color: "#1A1A1A",
+    marginBottom: 4,
+  },
+  skillDescription: {
+    fontSize: 14,
+    color: "#666666",
     marginBottom: 8,
   },
-  skillsContainer: {
+  skillMetrics: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    gap: 16,
+  },
+  metricItem: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
-  skillChip: {
-    backgroundColor: "rgba(108, 99, 255, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  skillText: {
-    color: "#6C63FF",
+  metricText: {
     fontSize: 12,
-    fontWeight: "500",
-  },
-  filterButton: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#6C63FF",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    color: "#666666",
   },
 });

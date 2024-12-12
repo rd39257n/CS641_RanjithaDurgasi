@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -23,6 +23,7 @@ const requiredEnvVars = [
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`);
     throw new Error(`Missing required environment variable: ${envVar}`);
   }
 }
@@ -31,7 +32,24 @@ for (const envVar of requiredEnvVars) {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore
-export const db = getFirestore(app);
+const db = getFirestore(app);
 
-// Export the app instance
+// Enable offline persistence
+try {
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === "failed-precondition") {
+      console.warn(
+        "Multiple tabs open, persistence can only be enabled in one tab at a time.",
+      );
+    } else if (err.code === "unimplemented") {
+      console.warn("The current browser doesn't support persistence.");
+    }
+  });
+
+  console.log("Firebase initialized successfully");
+} catch (error) {
+  console.error("Error initializing Firebase persistence:", error);
+}
+
+export { db };
 export default app;

@@ -14,10 +14,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSignUpContext } from "./signUpContext";
 
 export default function Verify() {
   const { signUp } = useSignUp();
   const router = useRouter();
+  const { signUpData } = useSignUpContext();
+
   const [code, setCode] = React.useState("");
   const [error, setError] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -26,6 +29,7 @@ export default function Verify() {
   // Check if we have an active sign-up
   React.useEffect(() => {
     if (!signUp) {
+      console.log("No active signup found");
       router.replace("/(auth)/sign-up");
     }
   }, [signUp]);
@@ -41,24 +45,40 @@ export default function Verify() {
     setSuccessMessage("");
 
     try {
+      console.log("Starting verification process...");
       const result = await signUp.attemptEmailAddressVerification({
         code,
       });
+      console.log("Verification result:", result.status);
+      console.log("User ID:", signUp?.createdUserId);
 
       if (result.status === "complete") {
-        // Store the session ID for later use
-        await AsyncStorage.setItem("pendingSessionId", result.createdSessionId);
+        try {
+          // Store both session ID and user ID
+          await AsyncStorage.setItem(
+            "pendingSessionId",
+            result.createdSessionId,
+          );
+          if (signUp?.createdUserId) {
+            await AsyncStorage.setItem("userBackupId", signUp.createdUserId);
+            console.log("User ID stored:", signUp.createdUserId);
+          }
 
-        setSuccessMessage("Email verified successfully!");
+          setSuccessMessage("Email verified successfully!");
 
-        // Navigate to skills page after a brief delay to show success message
-        setTimeout(() => {
-          router.push("/(auth)/skills");
-        }, 1000);
+          // Navigate to skills page after a brief delay
+          setTimeout(() => {
+            router.push("/(auth)/skills");
+          }, 1000);
+        } catch (storageError) {
+          console.error("Storage error:", storageError);
+          setError("Failed to save session data. Please try again.");
+        }
       } else {
         setError("Verification failed. Please try again.");
       }
     } catch (err: any) {
+      console.error("Verification error:", err);
       setError(err.message || "Verification failed");
     } finally {
       setIsLoading(false);
@@ -67,16 +87,28 @@ export default function Verify() {
 
   const resendCode = async () => {
     try {
+      console.log("Requesting new verification code...");
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code",
       });
+      console.log("New code sent successfully");
       setSuccessMessage("New code sent successfully!");
       setError("");
     } catch (err: any) {
+      console.error("Resend code error:", err);
       setError("Failed to resend code. Please try again.");
       setSuccessMessage("");
     }
   };
+
+  // Log initial state for debugging
+  React.useEffect(() => {
+    console.log("Initial signup state:", {
+      hasSignUp: !!signUp,
+      userId: signUp?.createdUserId,
+      signUpData,
+    });
+  }, []);
 
   // Don't render anything if there's no active sign-up
   if (!signUp) {

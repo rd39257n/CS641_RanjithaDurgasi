@@ -7,22 +7,62 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-// This would come from your actual user data/context
-const DUMMY_USER_SKILLS = {
-  skills: ["React Native", "JavaScript", "UI Design"],
-  learningInterests: ["Python", "Machine Learning", "Data Science"],
-  bio: "Computer Science student passionate about mobile development. Looking to exchange knowledge in programming and design.",
-};
+import React from "react";
+import { firebaseUtils } from "../../lib/firebase-utils";
 
 export default function Profile() {
   const { user } = useUser();
   const { signOut } = useAuth();
+  const [userData, setUserData] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
   const firstLetter =
     user?.emailAddresses[0].emailAddress?.charAt(0).toUpperCase() || "?";
+
+  React.useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (user?.id) {
+          const data = await firebaseUtils.getUserProfile(user.id);
+          if (data) {
+            console.log("Fetched user data:", data);
+            setUserData(data);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.button} onPress={() => signOut()}>
+          <MaterialCommunityIcons name="logout" size={24} color="#FFFFFF" />
+          <Text style={styles.buttonText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,7 +79,9 @@ export default function Profile() {
               </View>
             </View>
             <Text style={styles.nameText}>
-              {user?.firstName || user?.emailAddresses[0].emailAddress}
+              {user?.firstName ||
+                userData?.username ||
+                user?.emailAddresses[0].emailAddress}
             </Text>
             <TouchableOpacity style={styles.editButton}>
               <MaterialCommunityIcons name="pencil" size={20} color="#6C63FF" />
@@ -49,13 +91,13 @@ export default function Profile() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About Me</Text>
-            <Text style={styles.bioText}>{DUMMY_USER_SKILLS.bio}</Text>
+            <Text style={styles.bioText}>{userData?.bio}</Text>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Skills I Can Share</Text>
             <View style={styles.skillsContainer}>
-              {DUMMY_USER_SKILLS.skills.map((skill, index) => (
+              {userData?.skills?.map((skill: string, index: number) => (
                 <View key={index} style={styles.skillChip}>
                   <Text style={styles.skillText}>{skill}</Text>
                 </View>
@@ -66,11 +108,13 @@ export default function Profile() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Want to Learn</Text>
             <View style={styles.skillsContainer}>
-              {DUMMY_USER_SKILLS.learningInterests.map((skill, index) => (
-                <View key={index} style={styles.learningChip}>
-                  <Text style={styles.learningText}>{skill}</Text>
-                </View>
-              ))}
+              {userData?.learningInterests?.map(
+                (skill: string, index: number) => (
+                  <View key={index} style={styles.learningChip}>
+                    <Text style={styles.learningText}>{skill}</Text>
+                  </View>
+                ),
+              )}
             </View>
           </View>
 
@@ -81,17 +125,17 @@ export default function Profile() {
                 size={24}
                 color="#6C63FF"
               />
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>Matches</Text>
             </View>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="star" size={24} color="#6C63FF" />
-              <Text style={styles.statValue}>4.8</Text>
+              <Text style={styles.statValue}>-</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="school" size={24} color="#6C63FF" />
-              <Text style={styles.statValue}>8</Text>
+              <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>Sessions</Text>
             </View>
           </View>
@@ -110,6 +154,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#4158D0",
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: "center",
   },
   scrollContent: {
     flexGrow: 1,

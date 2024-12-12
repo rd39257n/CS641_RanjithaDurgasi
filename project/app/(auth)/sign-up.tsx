@@ -1,6 +1,7 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Text,
   TextInput,
@@ -13,10 +14,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSignUpContext } from "./signUpContext";
 
 export default function SignUp() {
   const { isLoaded, signUp } = useSignUp();
   const router = useRouter();
+  const { updateSignUpData } = useSignUpContext();
+
   const [email, setEmail] = React.useState("");
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -43,17 +47,37 @@ export default function SignUp() {
 
     setIsLoading(true);
     try {
-      await signUp.create({
+      console.log("Starting sign up process...");
+
+      // Create the Clerk user
+      const result = await signUp.create({
         emailAddress: email,
         password,
       });
 
+      console.log("Sign up completed, userId:", signUp.createdUserId);
+
+      // Store user data in context
+      await updateSignUpData({
+        email,
+        username,
+        password, // You might want to remove this depending on your security requirements
+      });
+
+      // Store the user ID in AsyncStorage for backup
+      if (signUp.createdUserId) {
+        await AsyncStorage.setItem("userBackupId", signUp.createdUserId);
+        console.log("User ID stored in AsyncStorage");
+      }
+
       // Prepare verification
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      console.log("Email verification prepared");
 
-      // Navigate to skills screen
+      // Navigate to verification screen
       router.push("/(auth)/verify");
     } catch (err: any) {
+      console.error("Sign up error:", err);
       setError(err.message || "Sign up failed");
     } finally {
       setIsLoading(false);
@@ -114,7 +138,10 @@ export default function SignUp() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError("");
+                  }}
                 />
               </View>
             </View>
@@ -134,7 +161,10 @@ export default function SignUp() {
                   placeholderTextColor="#999"
                   autoCapitalize="none"
                   value={username}
-                  onChangeText={setUsername}
+                  onChangeText={(text) => {
+                    setUsername(text);
+                    setError("");
+                  }}
                 />
               </View>
             </View>
@@ -154,7 +184,10 @@ export default function SignUp() {
                   placeholderTextColor="#999"
                   secureTextEntry={!showPassword}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError("");
+                  }}
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -184,7 +217,10 @@ export default function SignUp() {
                   placeholderTextColor="#999"
                   secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    setError("");
+                  }}
                 />
                 <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}

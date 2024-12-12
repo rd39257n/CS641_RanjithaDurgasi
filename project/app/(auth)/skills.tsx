@@ -1,6 +1,7 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Text,
   TouchableOpacity,
@@ -57,25 +58,42 @@ export default function Skills() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState("");
 
-  // Check if we have an active sign-up
   React.useEffect(() => {
-    if (!signUp) {
-      router.replace("/(auth)/sign-up");
-    }
+    const verifySignUp = async () => {
+      if (!signUp) {
+        console.log("No active signup found");
+        router.replace("/(auth)/sign-up");
+        return;
+      }
+
+      console.log("Checking signup state:", {
+        hasSignUp: !!signUp,
+        userId: signUp?.createdUserId,
+        signUpData,
+      });
+
+      const storedUserId = await AsyncStorage.getItem("userBackupId");
+      if (!signUp.createdUserId && !storedUserId) {
+        console.log("No user ID found in signup or storage");
+        router.replace("/(auth)/sign-up");
+      }
+    };
+
+    verifySignUp();
   }, [signUp]);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
-    setError(""); // Clear any error when user makes a selection
+    setError("");
   };
 
   const toggleLearning = (skill: string) => {
     setLearningInterests((prev) =>
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
-    setError(""); // Clear any error when user makes a selection
+    setError("");
   };
 
   const onNext = async () => {
@@ -91,20 +109,38 @@ export default function Skills() {
 
     setIsLoading(true);
     try {
-      // Save the selected skills to context
+      console.log("Saving skills to context:", {
+        skills: selectedSkills,
+        learningInterests,
+      });
+
       await updateSignUpData({
         skills: selectedSkills,
         learningInterests: learningInterests,
       });
 
+      const userId =
+        signUp?.createdUserId || (await AsyncStorage.getItem("userBackupId"));
+      if (userId) {
+        await AsyncStorage.setItem(
+          `skillsBackup_${userId}`,
+          JSON.stringify({
+            skills: selectedSkills,
+            learningInterests,
+            timestamp: new Date().toISOString(),
+          }),
+        );
+        console.log("Skills backup created");
+      }
+
       setSuccessMessage("Skills saved successfully!");
 
-      // Navigate to bio screen after a brief delay to show success message
       setTimeout(() => {
         router.push("/(auth)/bio");
       }, 1000);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      console.error("Error saving skills:", err);
+      setError(err.message || "Failed to save skills. Please try again.");
     } finally {
       setIsLoading(false);
     }

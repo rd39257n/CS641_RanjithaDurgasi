@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSignUpContext } from "./signUpContext";
+import { firebaseUtils } from "../../lib/firebase-utils";
 
 export default function Bio() {
   const { signUp, setActive } = useSignUp();
@@ -27,12 +28,47 @@ export default function Bio() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState("");
 
-  // Check if we have an active sign-up
   React.useEffect(() => {
-    if (!signUp) {
-      router.replace("/(auth)/sign-up");
-    }
+    const verifySignUp = async () => {
+      if (!signUp) {
+        console.log("No active signup found");
+        router.replace("/(auth)/sign-up");
+        return;
+      }
+
+      console.log("Checking signup state:", {
+        hasSignUp: !!signUp,
+        userId: signUp?.createdUserId,
+        signUpData,
+      });
+
+      const storedUserId = await AsyncStorage.getItem("userBackupId");
+      if (!signUp.createdUserId && !storedUserId) {
+        console.log("No user ID found in signup or storage");
+        router.replace("/(auth)/sign-up");
+      }
+    };
+
+    verifySignUp();
   }, [signUp]);
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      console.log("Creating user profile for ID:", userId);
+      await firebaseUtils.createUserProfile(userId, {
+        email: signUpData.email,
+        username: signUpData.username || "",
+        skills: signUpData.skills || [],
+        learningInterests: signUpData.learningInterests || [],
+        bio: bio.trim(),
+      });
+      console.log("User profile created successfully");
+      return true;
+    } catch (error) {
+      console.error("Error creating user profile:", error);
+      throw error;
+    }
+  };
 
   const onNext = async () => {
     if (!bio.trim()) {
@@ -48,32 +84,42 @@ export default function Bio() {
     setIsLoading(true);
     setError("");
     try {
-      // Save bio to context
       await updateSignUpData({
         bio: bio.trim(),
       });
 
-      // Get the stored session ID
       const pendingSessionId = await AsyncStorage.getItem("pendingSessionId");
-
       if (!pendingSessionId) {
         setError("Session not found. Please try signing up again.");
         return;
       }
 
-      // Set the active session
-      await setActive({ session: pendingSessionId });
+      const userId =
+        signUp?.createdUserId || (await AsyncStorage.getItem("userBackupId"));
+      if (!userId) {
+        setError("User ID not found. Please try signing up again.");
+        return;
+      }
 
-      // Clear the stored session ID
+      try {
+        await createUserProfile(userId);
+      } catch (firestoreErr) {
+        console.error("Firestore error:", firestoreErr);
+        setError("Failed to create user profile. Please try again.");
+        return;
+      }
+
+      await handleBackup(userId);
+      await setActive({ session: pendingSessionId });
       await AsyncStorage.removeItem("pendingSessionId");
 
       setSuccessMessage("Profile completed successfully!");
 
-      // Short delay to show success message
       setTimeout(() => {
         router.replace("/(home)");
       }, 1000);
     } catch (err: any) {
+      console.error("Error in onNext:", err);
       setError(err.message || "Failed to complete profile");
       Alert.alert(
         "Error",
@@ -85,7 +131,25 @@ export default function Bio() {
     }
   };
 
-  // Don't render if no active signup
+  const handleBackup = async (userId: string) => {
+    try {
+      const backupData = {
+        ...signUpData,
+        bio: bio.trim(),
+        timestamp: new Date().toISOString(),
+        userId,
+      };
+
+      await AsyncStorage.setItem(
+        `userBackup_${userId}`,
+        JSON.stringify(backupData),
+      );
+      console.log("Backup created successfully");
+    } catch (error) {
+      console.error("Error creating backup:", error);
+    }
+  };
+
   if (!signUp) {
     return null;
   }
@@ -141,7 +205,7 @@ export default function Bio() {
                 value={bio}
                 onChangeText={(text) => {
                   setBio(text);
-                  setError(""); // Clear error on input
+                  setError("");
                 }}
                 maxLength={500}
                 textAlignVertical="top"
