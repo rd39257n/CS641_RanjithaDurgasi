@@ -8,10 +8,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Modal,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { WebView } from "react-native-webview";
 
-// Updated categories to match the skills data
 const SKILL_CATEGORIES = {
   Programming: {
     icon: "code-tags",
@@ -53,9 +54,9 @@ const SKILLS_DATA = [
     prerequisites: ["JavaScript", "React"],
     careerPaths: ["Mobile App Developer", "Full Stack Developer"],
     resources: [
-      "Official React Native Documentation",
-      "Udemy Courses",
-      "YouTube Tutorials",
+      "https://reactnative.dev",
+      "https://udemy.com",
+      "https://youtube.com",
     ],
   },
   {
@@ -69,7 +70,11 @@ const SKILLS_DATA = [
     learningTime: "2-4 months",
     prerequisites: ["Basic Design Theory"],
     careerPaths: ["UI Designer", "UX Designer"],
-    resources: ["Figma Tutorials", "Design Books", "Online Courses"],
+    resources: [
+      "https://figma.com",
+      "https://designcourse.com",
+      "https://coursera.org",
+    ],
   },
   {
     id: "3",
@@ -86,7 +91,11 @@ const SKILLS_DATA = [
       "Software Developer",
       "Machine Learning Engineer",
     ],
-    resources: ["Python.org", "Codecademy", "Automate the Boring Stuff"],
+    resources: [
+      "https://python.org",
+      "https://codecademy.com",
+      "https://automatetheboringstuff.com",
+    ],
   },
   {
     id: "4",
@@ -100,9 +109,9 @@ const SKILLS_DATA = [
     prerequisites: ["Python", "Linear Algebra", "Statistics"],
     careerPaths: ["Machine Learning Engineer", "Data Scientist"],
     resources: [
-      "Coursera AI Courses",
-      "Google AI Learning Resources",
-      "Books on ML",
+      "https://coursera.org",
+      "https://tensorflow.org",
+      "https://fast.ai",
     ],
   },
   {
@@ -117,9 +126,120 @@ const SKILLS_DATA = [
     prerequisites: ["Basic Computer Knowledge"],
     careerPaths: ["Digital Marketer", "Content Strategist"],
     resources: [
-      "Google Digital Garage",
-      "HubSpot Academy",
-      "Udemy Marketing Courses",
+      "https://google.com/digitalgarage",
+      "https://hubspot.com/academy",
+      "https://udemy.com",
+    ],
+  },
+  {
+    id: "6",
+    name: "Cloud Computing",
+    category: "Technology",
+    description:
+      "Learn to design, deploy, and manage applications and services on cloud platforms like AWS, Azure, or Google Cloud.",
+    popularity: 91,
+    difficulty: "Intermediate",
+    learningTime: "4-6 months",
+    prerequisites: ["Networking Basics", "Linux"],
+    careerPaths: ["Cloud Engineer", "DevOps Engineer"],
+    resources: [
+      "https://aws.amazon.com/training",
+      "https://cloud.google.com/training",
+      "https://azure.microsoft.com/en-us/training/",
+    ],
+  },
+  {
+    id: "7",
+    name: "Cybersecurity",
+    category: "Technology",
+    description:
+      "Learn how to protect systems, networks, and data from cyber threats and vulnerabilities.",
+    popularity: 87,
+    difficulty: "Advanced",
+    learningTime: "6-12 months",
+    prerequisites: ["Networking Basics", "Operating Systems"],
+    careerPaths: ["Cybersecurity Analyst", "Ethical Hacker"],
+    resources: ["https://cybrary.it", "https://sans.org", "https://cisco.com"],
+  },
+  {
+    id: "8",
+    name: "SEO Optimization",
+    category: "Marketing",
+    description:
+      "Learn how to improve website visibility and ranking on search engines through SEO strategies.",
+    popularity: 83,
+    difficulty: "Beginner",
+    learningTime: "1-2 months",
+    prerequisites: ["Basic Computer Skills"],
+    careerPaths: ["SEO Specialist", "Content Strategist"],
+    resources: ["https://moz.com", "https://ahrefs.com", "https://semrush.com"],
+  },
+  {
+    id: "9",
+    name: "Game Development",
+    category: "Programming",
+    description:
+      "Learn to create interactive games using game engines like Unity or Unreal Engine.",
+    popularity: 89,
+    difficulty: "Intermediate",
+    learningTime: "6-12 months",
+    prerequisites: ["Programming Basics"],
+    careerPaths: ["Game Developer", "3D Artist"],
+    resources: [
+      "https://unity.com/learn",
+      "https://unrealengine.com/onlinelearning",
+      "https://udemy.com",
+    ],
+  },
+  {
+    id: "10",
+    name: "Graphic Design",
+    category: "Design",
+    description:
+      "Learn to create visual content to communicate ideas using software like Adobe Photoshop or Illustrator.",
+    popularity: 86,
+    difficulty: "Beginner",
+    learningTime: "3-5 months",
+    prerequisites: ["Basic Design Concepts"],
+    careerPaths: ["Graphic Designer", "Brand Designer"],
+    resources: [
+      "https://adobe.com",
+      "https://canva.com",
+      "https://skillshare.com",
+    ],
+  },
+  {
+    id: "11",
+    name: "Web Development",
+    category: "Programming",
+    description:
+      "Learn to create websites using HTML, CSS, JavaScript, and frameworks like React or Angular.",
+    popularity: 94,
+    difficulty: "Beginner",
+    learningTime: "3-6 months",
+    prerequisites: [],
+    careerPaths: ["Web Developer", "Frontend Developer"],
+    resources: [
+      "https://freecodecamp.org",
+      "https://w3schools.com",
+      "https://udemy.com",
+    ],
+  },
+  {
+    id: "12",
+    name: "3D Modeling",
+    category: "Design",
+    description:
+      "Learn to create three-dimensional digital models for applications in design, animation, and gaming.",
+    popularity: 84,
+    difficulty: "Intermediate",
+    learningTime: "4-8 months",
+    prerequisites: ["Basic Design Skills"],
+    careerPaths: ["3D Artist", "Game Designer"],
+    resources: [
+      "https://blender.org",
+      "https://autodesk.com",
+      "https://cgcookie.com",
     ],
   },
 ];
@@ -127,6 +247,13 @@ const SKILLS_DATA = [
 export default function SkillDiscovery() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [webViewVisible, setWebViewVisible] = useState(false);
+  const [webViewUrl, setWebViewUrl] = useState("");
+
+  const openWebView = (url) => {
+    setWebViewUrl(url);
+    setWebViewVisible(true);
+  };
 
   const renderSkillCard = (skill) => {
     const categoryConfig = SKILL_CATEGORIES[skill.category] || {
@@ -136,11 +263,11 @@ export default function SkillDiscovery() {
     };
 
     return (
-      <TouchableOpacity key={skill.id} style={styles.skillCard}>
+      <View key={skill.id} style={styles.skillCard}>
         <View
           style={[
             styles.categoryIndicator,
-            { backgroundColor: `${categoryConfig.color}15` },
+            { backgroundColor: `${categoryConfig.color}20` },
           ]}
         >
           <MaterialCommunityIcons
@@ -168,8 +295,19 @@ export default function SkillDiscovery() {
               <Text style={styles.metricText}>{skill.learningTime}</Text>
             </View>
           </View>
+          <ScrollView horizontal style={styles.resources}>
+            {skill.resources.map((resource, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => openWebView(resource)}
+                style={styles.resourceButton}
+              >
+                <Text style={styles.resourceText}>Resource {index + 1}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -225,7 +363,7 @@ export default function SkillDiscovery() {
                 selectedCategory === category && styles.selectedCategoryChip,
                 {
                   backgroundColor:
-                    selectedCategory === category ? config.color : "#F0F0F0",
+                    selectedCategory === category ? config.color : "#E8EAF6",
                 },
               ]}
               onPress={() =>
@@ -259,6 +397,18 @@ export default function SkillDiscovery() {
       >
         {filteredSkills.map(renderSkillCard)}
       </ScrollView>
+
+      <Modal visible={webViewVisible} animationType="slide">
+        <SafeAreaView style={{ flex: 1 }}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setWebViewVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={30} color="#000" />
+          </TouchableOpacity>
+          <WebView source={{ uri: webViewUrl }} style={{ flex: 1 }} />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -266,11 +416,12 @@ export default function SkillDiscovery() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#4158D0",
+    backgroundColor: "#F5F7FA",
   },
   header: {
     padding: 24,
     paddingTop: Platform.OS === "ios" ? 20 : 40,
+    backgroundColor: "#6C63FF",
   },
   headerTitle: {
     fontSize: 32,
@@ -286,7 +437,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#E8EAF6",
     marginHorizontal: 24,
     borderRadius: 16,
     padding: 12,
@@ -317,7 +468,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
     marginRight: 8,
     gap: 6,
   },
@@ -388,5 +538,23 @@ const styles = StyleSheet.create({
   metricText: {
     fontSize: 12,
     color: "#666666",
+  },
+  resources: {
+    marginTop: 10,
+    flexDirection: "row",
+  },
+  resourceButton: {
+    backgroundColor: "#E0E0E0",
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  resourceText: {
+    color: "#333",
+    fontSize: 12,
+  },
+  closeButton: {
+    padding: 16,
+    alignSelf: "flex-end",
   },
 });
