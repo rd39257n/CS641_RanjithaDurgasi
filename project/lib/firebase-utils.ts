@@ -9,7 +9,6 @@ import {
   where,
   getDocs,
   writeBatch,
-  serverTimestamp,
 } from "firebase/firestore";
 
 // User Profile Interface
@@ -20,6 +19,8 @@ export interface UserProfile {
   skills: string[];
   learningInterests: string[];
   bio: string;
+  completedSkills: string[];
+  note: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +66,8 @@ export const firebaseUtils = {
         skills: userData.skills || [],
         learningInterests: userData.learningInterests || [],
         bio: userData.bio || "",
+        completedSkills: [],
+        note: "",
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -101,6 +104,33 @@ export const firebaseUtils = {
       });
     } catch (error) {
       console.error("Error updating user profile:", error);
+      throw error;
+    }
+  },
+
+  async addCompletedSkill(userId: string, skillId: string): Promise<void> {
+    try {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data() as UserProfile;
+        const completedSkills = userData.completedSkills || [];
+
+        if (!completedSkills.includes(skillId)) {
+          completedSkills.push(skillId);
+          await updateDoc(userRef, { completedSkills, updatedAt: new Date() });
+          console.log(
+            `Skill ${skillId} marked as completed for user ${userId}`,
+          );
+        } else {
+          console.log(`Skill ${skillId} is already marked as completed.`);
+        }
+      } else {
+        console.warn(`User with ID ${userId} not found.`);
+      }
+    } catch (error) {
+      console.error("Error adding completed skill:", error);
       throw error;
     }
   },
@@ -224,34 +254,6 @@ export const firebaseUtils = {
       console.log("Skills seeded successfully");
     } catch (error) {
       console.error("Error seeding skills:", error);
-      throw error;
-    }
-  },
-
-  async seedSkillCategories(
-    categories: Record<
-      string,
-      Omit<SkillCategory, "name" | "createdAt" | "updatedAt">
-    >,
-  ): Promise<void> {
-    try {
-      const batch = writeBatch(db);
-      const timestamp = new Date();
-
-      Object.entries(categories).forEach(([categoryName, categoryData]) => {
-        const categoryRef = doc(db, "skillCategories", categoryName);
-        batch.set(categoryRef, {
-          name: categoryName,
-          ...categoryData,
-          createdAt: timestamp,
-          updatedAt: timestamp,
-        });
-      });
-
-      await batch.commit();
-      console.log("Skill categories seeded successfully");
-    } catch (error) {
-      console.error("Error seeding skill categories:", error);
       throw error;
     }
   },

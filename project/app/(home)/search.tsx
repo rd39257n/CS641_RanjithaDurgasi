@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
+import { firebaseUtils } from "../../lib/firebase-utils";
+import { useUser } from "@clerk/clerk-expo";
 
 const SKILL_CATEGORIES = {
   Programming: {
@@ -56,7 +58,7 @@ const SKILLS_DATA = [
     resources: [
       "https://reactnative.dev",
       "https://udemy.com",
-      "https://youtube.com",
+      "https://www.youtube.com/watch?v=gvkqT_Uoahw",
     ],
   },
   {
@@ -93,7 +95,7 @@ const SKILLS_DATA = [
     ],
     resources: [
       "https://python.org",
-      "https://codecademy.com",
+      "https://www.youtube.com/watch?v=_uQrJ0TkZlc&t=109s",
       "https://automatetheboringstuff.com",
     ],
   },
@@ -249,10 +251,25 @@ export default function SkillDiscovery() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [webViewVisible, setWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState("");
+  const { user } = useUser(); // Clerk user object
 
   const openWebView = (url) => {
     setWebViewUrl(url);
     setWebViewVisible(true);
+  };
+
+  const markSkillAsDone = async (skillId) => {
+    if (!user) {
+      alert("Please log in to mark skills as completed.");
+      return;
+    }
+    try {
+      await firebaseUtils.addCompletedSkill(user.id, skillId); // Update Firebase utils to handle this
+      alert("Skill marked as done!");
+    } catch (error) {
+      console.error("Error marking skill as done:", error);
+      alert("Failed to mark skill as done. Please try again.");
+    }
   };
 
   const renderSkillCard = (skill) => {
@@ -306,6 +323,13 @@ export default function SkillDiscovery() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          <TouchableOpacity
+            style={styles.doneButton}
+            onPress={() => markSkillAsDone(skill.id)}
+          >
+            <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+            <Text style={styles.doneButtonText}>Mark as Done</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -556,5 +580,21 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 16,
     alignSelf: "flex-end",
+  },
+  doneButton: {
+    marginTop: 8,
+    backgroundColor: "#6C63FF",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  doneButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 4,
   },
 });

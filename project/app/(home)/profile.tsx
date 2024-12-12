@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
@@ -19,6 +20,7 @@ export default function Profile() {
   const [userData, setUserData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [note, setNote] = React.useState("");
 
   const firstLetter =
     user?.emailAddresses[0].emailAddress?.charAt(0).toUpperCase() || "?";
@@ -31,6 +33,7 @@ export default function Profile() {
           if (data) {
             console.log("Fetched user data:", data);
             setUserData(data);
+            setNote(data.note || "");
           }
         }
       } catch (err) {
@@ -43,6 +46,16 @@ export default function Profile() {
 
     fetchUserData();
   }, [user?.id]);
+
+  const handleSaveNote = async () => {
+    try {
+      await firebaseUtils.updateUserProfile(user?.id!, { note });
+      console.log("Note saved successfully");
+    } catch (err) {
+      console.error("Error saving note:", err);
+      setError("Failed to save note");
+    }
+  };
 
   if (loading) {
     return (
@@ -83,61 +96,77 @@ export default function Profile() {
                 userData?.username ||
                 user?.emailAddresses[0].emailAddress}
             </Text>
-            <TouchableOpacity style={styles.editButton}>
-              <MaterialCommunityIcons name="pencil" size={20} color="#6C63FF" />
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About Me</Text>
-            <Text style={styles.bioText}>{userData?.bio}</Text>
+            <Text style={styles.bioText}>
+              {userData?.bio || "No bio available"}
+            </Text>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Skills I Can Share</Text>
             <View style={styles.skillsContainer}>
-              {userData?.skills?.map((skill: string, index: number) => (
-                <View key={index} style={styles.skillChip}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                </View>
-              ))}
+              {userData?.skills?.length > 0 ? (
+                userData.skills.map((skill: string, index: number) => (
+                  <View key={index} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{skill}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>No skills to share yet.</Text>
+              )}
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Want to Learn</Text>
             <View style={styles.skillsContainer}>
-              {userData?.learningInterests?.map(
-                (skill: string, index: number) => (
-                  <View key={index} style={styles.learningChip}>
-                    <Text style={styles.learningText}>{skill}</Text>
-                  </View>
-                ),
+              {userData?.learningInterests?.length > 0 ? (
+                userData.learningInterests.map(
+                  (skill: string, index: number) => (
+                    <View key={index} style={styles.learningChip}>
+                      <Text style={styles.learningText}>{skill}</Text>
+                    </View>
+                  ),
+                )
+              ) : (
+                <Text style={styles.emptyText}>No learning interests yet.</Text>
               )}
             </View>
           </View>
 
-          <View style={styles.statsSection}>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="handshake"
-                size={24}
-                color="#6C63FF"
-              />
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Matches</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Completed Skills</Text>
+            <View style={styles.skillsContainer}>
+              {userData?.completedSkills?.length > 0 ? (
+                userData.completedSkills.map((skill: string, index: number) => (
+                  <View key={index} style={styles.completedChip}>
+                    <Text style={styles.completedText}>{skill}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>No completed skills yet.</Text>
+              )}
             </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="star" size={24} color="#6C63FF" />
-              <Text style={styles.statValue}>-</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="school" size={24} color="#6C63FF" />
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Sessions</Text>
-            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Personal Note</Text>
+            <TextInput
+              style={styles.noteInput}
+              value={note}
+              onChangeText={setNote}
+              multiline
+              placeholder="Write a personal note..."
+            />
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveNote}
+            >
+              <Text style={styles.saveButtonText}>Save Note</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.button} onPress={() => signOut()}>
@@ -271,6 +300,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
+  completedChip: {
+    backgroundColor: "rgba(50, 200, 100, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  completedText: {
+    color: "#32C864",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+  },
   statsSection: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -322,5 +367,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
+  },
+  noteInput: {
+    backgroundColor: "#F4F4F4",
+    borderRadius: 12,
+    padding: 16,
+    height: 120,
+    marginBottom: 16,
+    fontSize: 16,
+    color: "#1A1A1A",
+    textAlignVertical: "top",
+  },
+  saveButton: {
+    backgroundColor: "#6C63FF",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignSelf: "flex-start",
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
